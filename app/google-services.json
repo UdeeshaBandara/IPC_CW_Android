@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "619505609683",
+    "project_id": "ipc-cw-ad530",
+    "storage_bucket": "ipc-cw-ad530.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:619505609683:android:d39a4355b3e67e6aec5d26",
+        "android_client_info": {
+          "package_name": "com.ipc.cw"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "619505609683-ii822adusdc21psbb4oka7899ha269vo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwOOW24yeCuqImIGIwLxWD9bQsw5zGM9g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "619505609683-ii822adusdc21psbb4oka7899ha269vo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
