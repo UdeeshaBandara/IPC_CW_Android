@@ -2,6 +2,7 @@ package com.ipc.cw
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -11,9 +12,12 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.database.*
 import com.google.firebase.firestore.*
@@ -30,9 +34,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     var database: FirebaseFirestore? = null
     var authReference: CollectionReference? = null
     var carList  = mutableListOf<Car>()
-    var locationList = mutableListOf<List<Location>>()
+    var locationList = mutableListOf<LatLng>()
     lateinit var recyclerCar: RecyclerView
     lateinit var carBottomSheet: CarBottomSheet
+    lateinit var selectCar: TextView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +59,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
             )
         }
+
+        selectCar = findViewById(R.id.select_car)
 
         mDatabase = FirebaseDatabase.getInstance().reference
         database = FirebaseFirestore.getInstance()
@@ -98,7 +106,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 //
 //        })
 
-        findViewById<TextView>(R.id.select_car).setOnClickListener {
+        selectCar.setOnClickListener {
             carBottomSheet = CarBottomSheet(this)
             carBottomSheet.setContentView(R.layout.bottom_sheet_car)
             carBottomSheet.show()
@@ -164,12 +172,38 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
                 holder.car_name.setOnClickListener {
-
+                    selectCar.text = "${carList[position].carNo} ${carList[position].driverName}"
+                    carBottomSheet.dismiss()
+                    updateValueListener(carList[position].uID!!)
 
                 }
             } catch (e: Exception) {
                 e.stackTrace
             }
         }
+    }
+
+    fun updateValueListener(documentId: String) {
+        authReference!!.document(documentId).collection("locationList")
+            .addSnapshotListener { snapshotNested, _ ->
+
+                locationList = snapshotNested!!.toObjects(Location::class.java).map {
+                    it.location?.let{unwrapped->
+                        LatLng(unwrapped.latitude,unwrapped.longitude)
+                    }
+                } as MutableList<LatLng>
+
+
+                if (locationList.size > 0) {
+                    map?.addPolyline(
+                        PolylineOptions().addAll(locationList)
+                            .width
+                                (12f)
+                            .color(Color.RED)
+                            .geodesic(true)
+                    )
+                    map?.moveCamera(CameraUpdateFactory.newLatLngZoom(locationList[0], 13f))
+                }
+            }
     }
 }
