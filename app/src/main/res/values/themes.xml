@@ -12,5 +12,12 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+        <item name="bottomSheetDialogTheme">@style/BottomSheet.RoundedCorners</item>
     </style>
+    <!-- Bottom Sheet Custom Background Styles -->
+    <style name="BottomSheet.RoundedCorners" parent="@style/ThemeOverlay.MaterialComponents.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheet.OverLay</item>
+    </style>
+
+    <style name="BottomSheet.OverLay" parent="Theme.MaterialComponents.BottomSheetDialog"/>
 </resources>
