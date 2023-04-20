@@ -2,6 +2,8 @@ package com.ipc.cw
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -10,14 +12,14 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.database.*
 import com.google.firebase.firestore.*
@@ -27,7 +29,7 @@ import com.ipc.cw.model.Location
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    var locationPermissionGranted: Boolean = false
+
     private var map: GoogleMap? = null
     var mapView: View? = null
     private var mDatabase: DatabaseReference? = null
@@ -76,35 +78,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 }
             }
-
-//        authReference!!.addSnapshotListener(EventListener { carListSnapShot, e ->
-//            if (e != null) {
-//                return@EventListener
-//            }
-//
-//
-//            carList  = carListSnapShot!!.toObjects(Car::class.java)
-//            for (queryDocumentSnapshot in carList) {
-//
-//                authReference!!.document(queryDocumentSnapshot.uID!!).collection("locationList").addSnapshotListener { snapshotNested, e ->
-//
-//                    locationList.add(snapshotNested!!.toObjects(Location::class.java))
-//                    var ww  = snapshotNested!!.toObjects(Location::class.java)
-//
-//                    map?.addPolyline(
-//                        PolylineOptions().add( LatLng(ww[0].location!!.latitude,ww[0].location!!.longitude), LatLng(ww[1].location!!.latitude,ww[1].location!!.longitude),  LatLng(ww[0].location!!.latitude,ww[0].location!!.longitude))
-//                            .width
-//                                (12f)
-//                            .color(Color.RED)
-//                            .geodesic(true)
-//                    )
-//                    map?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(6.971312953677447, 79.97690780715868), 13f))
-//
-//                }
-//
-//            }
-//
-//        })
 
         selectCar.setOnClickListener {
             carBottomSheet = CarBottomSheet(this)
@@ -187,10 +160,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         authReference!!.document(documentId).collection("locationList")
             .addSnapshotListener { snapshotNested, _ ->
 
+                map?.clear()
+
                 locationList = snapshotNested!!.toObjects(Location::class.java).map {
-                    it.location?.let{unwrapped->
-                        LatLng(unwrapped.latitude,unwrapped.longitude)
-                    }
+
+                        LatLng(it.latitude!!,it.longitude!!)
+
                 } as MutableList<LatLng>
 
 
@@ -202,8 +177,53 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                             .color(Color.RED)
                             .geodesic(true)
                     )
-                    map?.moveCamera(CameraUpdateFactory.newLatLngZoom(locationList[0], 13f))
+                    map?.addMarker(
+                        MarkerOptions()
+                            .position(locationList[locationList.size-1])
+                            .icon(
+                                bitmapFromVector(
+                                    applicationContext,
+                                    R.drawable.icon_car
+                                )
+                            )
+                    )
+                    map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                        locationList[locationList.size - 1],
+                        16.5f
+                    ))
                 }
             }
+    }
+    private fun bitmapFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
+        // below line is use to generate a drawable.
+        val vectorDrawable = ContextCompat.getDrawable(
+            context, vectorResId
+        )
+
+        // below line is use to set bounds to our vector
+        // drawable.
+        vectorDrawable!!.setBounds(
+            0, 0, vectorDrawable.intrinsicWidth,
+            vectorDrawable.intrinsicHeight
+        )
+
+        // below line is use to create a bitmap for our
+        // drawable which we have added.
+        val bitmap = Bitmap.createBitmap(
+            vectorDrawable.intrinsicWidth,
+            vectorDrawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
+
+        // below line is use to add bitmap in our canvas.
+        val canvas = Canvas(bitmap)
+
+        // below line is use to draw our
+        // vector drawable in canvas.
+        vectorDrawable.draw(canvas)
+
+        // after generating our bitmap we are returning our
+        // bitmap.
+        return BitmapDescriptorFactory.fromBitmap(bitmap)
     }
 }
