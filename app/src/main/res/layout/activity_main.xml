@@ -21,7 +21,7 @@
         android:background="@drawable/car_select_background"
         android:gravity="center_vertical"
         android:paddingHorizontal="10dp"
-        android:text="Select car"
+        android:text="All Cars (Tap to filter)"
         android:textColor="@color/black"
         android:textSize="18sp"
         android:textStyle="bold" />

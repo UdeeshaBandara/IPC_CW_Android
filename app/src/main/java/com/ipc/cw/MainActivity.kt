@@ -4,14 +4,14 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.Color.parseColor
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -37,9 +37,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     var authReference: CollectionReference? = null
     var carList  = mutableListOf<Car>()
     var locationList = mutableListOf<LatLng>()
+    var markerList = mutableListOf<Marker>()
     lateinit var recyclerCar: RecyclerView
     lateinit var carBottomSheet: CarBottomSheet
     lateinit var selectCar: TextView
+    lateinit var view_all: TextView
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,22 +70,29 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         database = FirebaseFirestore.getInstance()
         authReference = database!!.collection("carsList")
 
-        authReference!!
-            .get()
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    carList = task.result.toObjects(Car::class.java)
-
-                    Log.e("hiiiiii", carList[0].uID!!)
-
-                }
-            }
+        getAllValues()
 
         selectCar.setOnClickListener {
             carBottomSheet = CarBottomSheet(this)
             carBottomSheet.setContentView(R.layout.bottom_sheet_car)
             carBottomSheet.show()
         }
+
+    }
+
+    private fun getAllValues() {
+        authReference!!
+            .get()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    carList = task.result.toObjects(Car::class.java)
+                    map?.clear()
+                    carList.forEach {
+                        updateValueListener(it.uID!!, it.carNo!!)
+                    }
+
+                }
+            }
 
     }
 
@@ -99,6 +108,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             recyclerCar = this.findViewById(R.id.recycler_cars)!!
+            view_all = this.findViewById(R.id.view_all)!!
 
 
             recyclerCar.adapter = DistrictAdapter()
@@ -108,13 +118,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 false
             )
 
-
+            view_all.setOnClickListener {
+                selectCar.text = "All Cars"
+                carBottomSheet.dismiss()
+                getAllValues()
+            }
         }
     }
 
     private inner class CarViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var car_name: TextView = itemView.findViewById(R.id.car_name)
         var driver_name: TextView = itemView.findViewById(R.id.driver_name)
+        var card: CardView = itemView.findViewById(R.id.card)
 
 
     }
@@ -142,10 +157,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     "${carList[position].driverName}"
 
 
-                holder.car_name.setOnClickListener {
+                holder.card.setOnClickListener {
+                    map?.clear()
                     selectCar.text = "${carList[position].carNo} ${carList[position].driverName}"
                     carBottomSheet.dismiss()
-                    updateValueListener(carList[position].uID!!)
+                    updateValueListener(carList[position].uID!!, carList[position].carNo!!)
 
                 }
             } catch (e: Exception) {
@@ -154,17 +170,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    fun updateValueListener(documentId: String) {
+    fun updateValueListener(documentId: String, carNo: String) {
         authReference!!.document(documentId).collection("locationList")
             .addSnapshotListener { snapshotNested, _ ->
 
-                map?.clear()
 
                 locationList = snapshotNested!!.toObjects(Location::class.java).map {
 
-                        LatLng(it.latitude!!,it.longitude!!)
+                    LatLng(it.latitude!!, it.longitude!!)
 
                 } as MutableList<LatLng>
+                Log.e("seee", "${ locationList }")
+
+
 
 
                 if (locationList.size > 0) {
@@ -172,23 +190,31 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         PolylineOptions().addAll(locationList)
                             .width
                                 (12f)
-                            .color(Color.RED)
+                            .color(parseColor("#$carNo"))
                             .geodesic(true)
                     )
-                    map?.addMarker(
+
+                    val m: Marker? = map?.addMarker(
                         MarkerOptions()
-                            .position(locationList[locationList.size-1])
+                            .position(locationList[locationList.size - 1])
                             .icon(
                                 bitmapFromVector(
                                     applicationContext,
                                     R.drawable.icon_car
                                 )
-                            )
+                            ).title(carNo)
+
                     )
-                    map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                        locationList[locationList.size - 1],
-                        16.5f
-                    ))
+                    if (m != null && !markerList.any { it.title == carNo }) {
+                        markerList.add(m)
+                    } else
+                        markerList[markerList.indexOfFirst { it.title == carNo }].remove()
+                    map?.moveCamera(
+                        CameraUpdateFactory.newLatLngZoom(
+                            locationList[locationList.size - 1],
+                            16.5f
+                        )
+                    )
                 }
             }
     }
