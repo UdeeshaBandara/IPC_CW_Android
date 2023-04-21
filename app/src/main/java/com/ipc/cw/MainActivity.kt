@@ -180,10 +180,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     LatLng(it.latitude!!, it.longitude!!)
 
                 } as MutableList<LatLng>
-                Log.e("seee", "${ locationList }")
-
-
-
 
                 if (locationList.size > 0) {
                     map?.addPolyline(
@@ -205,10 +201,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                             ).title(carNo)
 
                     )
-                    if (m != null && !markerList.any { it.title == carNo }) {
+
+                    if (m != null && markerList.indexOfFirst { it.title.toString() == carNo } == -1) {
                         markerList.add(m)
-                    } else
-                        markerList[markerList.indexOfFirst { it.title == carNo }].remove()
+                    } else {
+                        val position = markerList.indexOfFirst { it.title.toString() == carNo }
+                        markerList[position].remove()
+                        markerList.removeAt(position)
+                        if (m != null) {
+                            markerList.add(m)
+                        }
+                    }
+
                     map?.moveCamera(
                         CameraUpdateFactory.newLatLngZoom(
                             locationList[locationList.size - 1],
